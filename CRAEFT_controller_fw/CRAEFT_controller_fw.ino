@@ -1,4 +1,3 @@
-
 /* IMPORT LIBRARIES ***********************************************************/
 #include <DRV8833.h>
 #include <HX711.h>
@@ -29,7 +28,7 @@ typedef enum {
     DISABLED_MODE =0,
     PINCHING_MODE,
     TOUCHING_MODE,
-} operating_mode_t
+} operating_mode_t;
 
 operating_mode_t op_mode = DISABLED_MODE;
 
@@ -46,7 +45,7 @@ float stiffness = PID_STIFFNESS_DEFAULT;
 DRV8833 driver = DRV8833();
 #define HAPTIC_PATTERN_LEN      500         // Haptic pattern array length
 #define HAPTIC_AMPLITUDE_MIN    0
-#define HAPTIC_AMPLITUDE_MAX    500
+#define HAPTIC_AMPLITUDE_MAX    150
 #define HAPTIC_FREQUENCY_MIN    1
 #define HAPTIC_FREQUENCY_MAX    15000
 
@@ -66,15 +65,15 @@ PWMServo servo;
 
 int dAngle = 0;            // Angle change command based on Force PD loop.
 float dAngleFloat = 0.0f;  // Angle change command based on Force PD loop.
-int setAngle = 20;         // Current angle & desired angle. we assume PID loop inside servo is perfect (open-loop).
+int setAngle = INIT_SERVO_ANGLE;         // Current angle & desired angle. we assume PID loop inside servo is perfect (open-loop).
 int previousAngle = 0;
-int objectAngle = MIN_SERVO_ANGLE; // Servo angle at which the object collides with the finger
+int objectAngle = SERVO_ANGLE_MIN; // Servo angle at which the object collides with the finger
 
 /* Load cell parameters */
 HX711 scale;
-#define BASE_LOADCELL_CALIBRATION -2100
+#define BASE_LOADCELL_CALIBRATION  -2100
 #define OZ_TO_GRAMS                453.592
-int loadcell_calibration_scale    BASE_LOADCELL_CALIBRATION
+int loadcell_calibration_scale = BASE_LOADCELL_CALIBRATION;
 long loadcell_reading = 0;
 
 
@@ -112,8 +111,14 @@ void loop()
     /* update the thumb controls values */
     updateThumbControls();
 
+    servo.write(setAngle);
+
     /* communicate current state */
-    sendCurrentState();
+   sendCurrentState();
+
+    delay(500);
+
+
 }
 
 
@@ -132,13 +137,13 @@ void servo_setup()
 /* Vibration coil */
 void vibration_coil_setup()
 {
-  driver.attachMotorA(inputA1, inputA2);  // Attach VCA to motor A of DRV8833
+  driver.attachMotorA(VIBRATION_COIL_INPUT_A1, VIBRATION_COIL_INPUT_A2);  // Attach VCA to motor A of DRV8833
   driver.motorAStop();  // Ensure motor is stopped initially
 
-  pinMode(SLP, OUTPUT);
-  digitalWrite(SLP, HIGH);  // Enable the motor driver (DRV8833)
+  pinMode(MOTOR_SLEEP, OUTPUT);
+  digitalWrite(MOTOR_SLEEP, HIGH);  // Enable the motor driver (DRV8833)
 
-  haptic_timeBetweenUpdates = 1.0f / haptic_updateFrequency
+  haptic_timeBetweenUpdates = 1.0f / haptic_updateFrequency;
 }
 
 /* Loadcell */
@@ -177,20 +182,20 @@ void playHapticPattern()
     {
         if (haptic_amp > 0) // if the amplitude is non-zero
         {
-            if (haptic_pattern[patternIndex] >= 0) 
+            if (haptic_pattern[haptic_patternIndex] >= 0) 
             {
-                driver.motorAForward(haptic_pattern[patternIndex]);  // Forward direction vibration
+                driver.motorAForward(haptic_pattern[haptic_patternIndex]);  // Forward direction vibration
             } else {
-                driver.motorAReverse(-haptic_pattern[patternIndex]);  // Reverse direction vibration
+                driver.motorAReverse(-haptic_pattern[haptic_patternIndex]);  // Reverse direction vibration
             }
         } else {
             driver.motorAStop();  // Stop vibration if amplitude is 0
         }
 
-    patternIndex += 1;
+    haptic_patternIndex += 1;
     
-    if (patternIndex >= patternLength) {
-      patternIndex = 0;  // Loop the pattern
+    if (haptic_patternIndex >= HAPTIC_PATTERN_LEN) {
+      haptic_patternIndex = 0;  // Loop the pattern
     }
 
     haptic_timeSinceLastUpdate = 0.0f;
@@ -208,10 +213,10 @@ float readLoadcell()
 }
 
 /* Thumb controls */
-float updateThumbControls()
+void updateThumbControls()
 {
     thumbstick_position[0] = analogRead(THUMBSTICK_X);
-    thumbstick_position[1] = analogRead(THUMBSTICK_Y)
+    thumbstick_position[1] = analogRead(THUMBSTICK_Y);
     pushbutton_press = digitalRead(PUSHBUTTON);
     light_sensor_value = analogRead(LIGHT_SENSOR);
 }
@@ -240,23 +245,35 @@ void processSerialCommands()
 
         switch (command)
         {
-            case == 'A':
-                setAngle = getAngle();
+            case 'A':
+                setAngle = getAngle(val);
+                Serial.println("Command A");
                 break;
-            case == 'O':
-                objectAngle = getAngle();
+            case 'O':
+                objectAngle = getAngle(val);
+                Serial.println("Command O");
                 break;
-            case == 'S':
-                setPIDstiffness();
+            case  'S':
+                setPIDstiffness(val);
+                Serial.println("Command S");
                 break;
-            case == 'P':
-                createHapticPattern();
+            case  'P':
+                Serial.println("Command P");
+                Serial.print("amp before:");
+                Serial.print(haptic_amp);
+                Serial.println(haptic_pattern[0]);
+                createHapticPattern(val);
+                Serial.print("amp after:");
+                Serial.print(haptic_amp);
+                Serial.println(haptic_pattern[0]);
                 break;
-            case == 'F':
-                setHapticFrequency();
+            case  'F':
+                setHapticFrequency(val);
+                Serial.println("Command F");
                 break;
-            case == 'M':
-                setOperatingMode();
+            case  'M':
+                setOperatingMode(val);
+              Serial.println("Command M");
                 break;
             default:
                 break;
@@ -270,7 +287,8 @@ void sendCurrentState()
     Serial.print(" ");
     Serial.print(light_sensor_value, DEC);
     Serial.print(" ");
-    Serial.print(filtForceNew, 2);
+//    Serial.print(filtForceNew, 2);
+    Serial.print(readLoadcell());
     Serial.print(" ");
     Serial.print(stiffness * (100.0f * PID_STIFFNESS_COEFFICIENT), 2);
     Serial.print(" ");
