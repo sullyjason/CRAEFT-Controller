@@ -18,8 +18,12 @@
 
 /* GLOBAL VARIABLES ***********************************************************/
 
-#define DEBUG 0
+#define DEBUG 1
 
+/* Main timing variables */
+uint32_t now = 0;
+uint32_t deltat =0;
+uint32_t lastLoopTime =0 ;
 
 /* Operating modes */
 typedef enum {
@@ -32,7 +36,7 @@ operating_mode_t op_mode = DISABLED_MODE;
 
 /* Serial print Send State loop timing*/
 
-#define SENDSTATE_TIME_BETWEEN_UPDATES 1
+#define SENDSTATE_TIME_BETWEEN_UPDATES 1.0f
 float sendstate_timeSinceLastUpdate = 0.0f;
 
 
@@ -67,7 +71,7 @@ int objectAngle = SERVO_ANGLE_MIN; // Servo angle at which the object collides w
 /* Load cell parameters */
 HX711 scale;
 #define LOADCELL_TIME_BETWEEN_SAMPLES     0.011 // Force sampling rate of 88Hz
-#define BASE_LOADCELL_CALIBRATION         -2100
+#define BASE_LOADCELL_CALIBRATION         -700
 #define OZ_TO_GRAMS                       453.592
 float loadcell_timeSinceLastUpdate = 0.0f;
 
@@ -122,6 +126,10 @@ void setup() {
 /* MAIN LOOP ******************************************************************/
 void loop()
 {
+    now = micros();
+    deltat = now - lastLoopTime;
+    lastLoopTime = now;
+
     /* check for input commands from Serial port */
     processSerialCommands();
 
@@ -197,6 +205,11 @@ void thumb_controls_setup()
 /* Servo */
 void updateServo()
 {
+    if (setAngle > SERVO_ANGLE_MAX) {
+        setAngle = SERVO_ANGLE_MAX;
+    } else if (setAngle < SERVO_ANGLE_MIN) {
+        setAngle = SERVO_ANGLE_MIN;
+    }
     servo.write(setAngle);
 }
 
@@ -204,7 +217,7 @@ void updateServo()
 void playHapticPattern()
 {   
     // how long has it been since we've last triggered the coil?
-    haptic_timeSinceLastUpdate += (micros() - haptic_timeSinceLastUpdate) / 1000000.0f;
+    haptic_timeSinceLastUpdate += deltat / 1000000.0f;
     
     if (haptic_timeSinceLastUpdate >= haptic_timeBetweenUpdates)
     {
@@ -234,8 +247,7 @@ void playHapticPattern()
 void updateForceReading()
 {
     // the loadcell is too slow to be read at every loop, we sample it at 88 Hz
-    loadcell_timeSinceLastUpdate += (micros() - loadcell_timeSinceLastUpdate) / 1000000.0f;
-    
+    loadcell_timeSinceLastUpdate += deltat / 1000000.0f;    
     if(loadcell_timeSinceLastUpdate >= LOADCELL_TIME_BETWEEN_SAMPLES)
     {
         if (scale.is_ready()) 
@@ -246,6 +258,7 @@ void updateForceReading()
             dErrorForce = (filtForceNew - filtForceLast) / LOADCELL_TIME_BETWEEN_SAMPLES;  // dF/dt
             filtForceLast = filtForceNew;
         }
+        loadcell_timeSinceLastUpdate =0;
     }
 }
 
@@ -310,6 +323,8 @@ void processSerialCommands()
                 setHapticFrequency(val);
                 #if DEBUG
                     Serial.println("Recieved command F");
+                    Serial.println("Set Frequency to ");
+                    Serial.println(val);
                 #endif
                 break;
             case  'M':
@@ -326,9 +341,10 @@ void processSerialCommands()
 
 void sendCurrentState()
 {
-  sendstate_timeSinceLastUpdate += (micros() - sendstate_timeSinceLastUpdate) / 1000000.0f;
+    sendstate_timeSinceLastUpdate += deltat / 1000000.0f  ;
     if(sendstate_timeSinceLastUpdate >= SENDSTATE_TIME_BETWEEN_UPDATES)
     {
+      sendstate_timeSinceLastUpdate = 0.0f;
       Serial.print("Set Angle: ");
       Serial.print(setAngle);
       Serial.print(" Light Sensor: ");
@@ -353,10 +369,13 @@ void sendCurrentState()
       Serial.print(desiredForce);
       Serial.print(" dAngle: ");
       Serial.print(dAngleFloat);
+      Serial.print("haptic_timeBetweenUpdates: ");
+      Serial.print(haptic_timeBetweenUpdates);
       Serial.println(" ");
 
       #endif
-      Serial.flush();
+      
+     Serial.flush();
     }
 }
 
@@ -468,7 +487,7 @@ void updateDefaultDesiredForce()
 void mainPIDloop()
 {
     /* update time tracking */
-    pid_timeSinceLastUpdate += (micros() - pid_timeSinceLastUpdate) / 1000000.0f;
+    pid_timeSinceLastUpdate += deltat / 1000000.0f  ;
 
     if(pid_timeSinceLastUpdate >= PID_TIME_BETWEEN_UPDATES)
     {
@@ -526,7 +545,7 @@ void mainPIDloop()
         }
 
         /* update servo position */
-        //updateServo();
+        updateServo();
 
         /* reset time counter */
         pid_timeSinceLastUpdate = 0.0f;
