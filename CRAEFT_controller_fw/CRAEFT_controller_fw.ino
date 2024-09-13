@@ -71,8 +71,7 @@ int objectAngle = SERVO_ANGLE_MIN; // Servo angle at which the object collides w
 /* Load cell parameters */
 HX711 scale;
 #define LOADCELL_TIME_BETWEEN_SAMPLES     0.011 // Force sampling rate of 88Hz
-#define BASE_LOADCELL_CALIBRATION         -700
-#define OZ_TO_GRAMS                       453.592
+#define BASE_LOADCELL_CALIBRATION         -60000.00
 float loadcell_timeSinceLastUpdate = 0.0f;
 
 int loadcell_calibration_scale = BASE_LOADCELL_CALIBRATION;
@@ -184,6 +183,7 @@ void loadcell_setup()
 {
     scale.begin(LOADCELL_DATA, LOADCELL_CLOCK);
     scale.set_scale(loadcell_calibration_scale);
+    scale.tare();
 }
 
 /* Thumb controls */
