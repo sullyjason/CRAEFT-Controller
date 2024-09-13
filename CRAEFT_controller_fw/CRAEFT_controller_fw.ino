@@ -18,12 +18,8 @@
 
 /* GLOBAL VARIABLES ***********************************************************/
 
-#define DEBUG 1
+#define DEBUG 0
 
-
-/* Main loop timing */
-float deltat = 0.0f; 
-float lastLoopTime = 0.0f;
 
 /* Operating modes */
 typedef enum {
@@ -33,6 +29,11 @@ typedef enum {
 } operating_mode_t;
 
 operating_mode_t op_mode = DISABLED_MODE;
+
+/* Serial print Send State loop timing*/
+
+#define SENDSTATE_TIME_BETWEEN_UPDATES 1
+float sendstate_timeSinceLastUpdate = 0.0f;
 
 
 /* Vibration coil parameters */
@@ -44,8 +45,8 @@ DRV8833 driver = DRV8833();
 #define HAPTIC_FREQUENCY_MAX    15000
 
 float haptic_updateFrequency = 100.0f;      // Frequency of the vibration pattern
-float haptic_timeBetweenUpdates = 0;
-float haptic_timeSinceLastUpdate = 0;
+float haptic_timeBetweenUpdates = 0.0f;
+float haptic_timeSinceLastUpdate = 0.0f;
 
 int haptic_pattern[HAPTIC_PATTERN_LEN];     // Pattern array for vibration
 int haptic_patternIndex = 0;                // Index in the vibration pattern
@@ -68,6 +69,7 @@ HX711 scale;
 #define LOADCELL_TIME_BETWEEN_SAMPLES     0.011 // Force sampling rate of 88Hz
 #define BASE_LOADCELL_CALIBRATION         -2100
 #define OZ_TO_GRAMS                       453.592
+float loadcell_timeSinceLastUpdate = 0.0f;
 
 int loadcell_calibration_scale = BASE_LOADCELL_CALIBRATION;
 
@@ -139,7 +141,8 @@ void loop()
     updateThumbControls();
 
     /* communicate current state */
-   sendCurrentState();
+    sendCurrentState();
+
 }
 
 
@@ -152,7 +155,8 @@ void loop()
 /* Servo */
 void servo_setup()
 {
-  servo.attach(SERVO_PIN);  // Attach the servo to the defined pin
+  servo.attach(SERVO_PIN);
+  updateServo();
 }
 
 /* Vibration coil */
@@ -322,26 +326,38 @@ void processSerialCommands()
 
 void sendCurrentState()
 {
-    Serial.print(setAngle);
-    Serial.print(" ");
-    Serial.print(light_sensor_value, DEC);
-    Serial.print(" ");
-    Serial.print(filtForceNew, 2);
-    Serial.print(" ");
-    Serial.print(stiffness * (100.0f * PID_STIFFNESS_COEFFICIENT), 2);
-    Serial.print(" ");
-    Serial.print(thumbstick_position[1], DEC); //vertical
-    #if DEBUG
-    Serial.print(rawForce);
-    Serial.print(" ");
-    Serial.print(errorForce);
-    Serial.print(" ");
-    Serial.print(desiredForce);
-    Serial.print(" ");
-    Serial.print(dAngleFloat);
-    Serial.print(" ");
-    #endif
-    Serial.flush();
+  sendstate_timeSinceLastUpdate += (micros() - sendstate_timeSinceLastUpdate) / 1000000.0f;
+    if(sendstate_timeSinceLastUpdate >= SENDSTATE_TIME_BETWEEN_UPDATES)
+    {
+      Serial.print("Set Angle: ");
+      Serial.print(setAngle);
+      Serial.print(" Light Sensor: ");
+      Serial.print(light_sensor_value, DEC);
+      Serial.print(" Force: ");
+      Serial.print(filtForceNew, 2);
+      Serial.print(" Stiffness: ");
+      Serial.print(stiffness * (100.0f * PID_STIFFNESS_COEFFICIENT), 2);
+      Serial.print(" Thumbstick Y and X: ");
+      Serial.print(thumbstick_position[1], DEC); //vertical
+      Serial.print(" ");
+      Serial.println(thumbstick_position[0], DEC); //horizontal
+
+      #if DEBUG
+      Serial.print("Mode: ");
+      Serial.print(op_mode);
+      Serial.print(" Raw Force: ");
+      Serial.print(rawForce);
+      Serial.print(" ErrorForce: ");
+      Serial.print(errorForce);
+      Serial.print(" Desired Force: ");
+      Serial.print(desiredForce);
+      Serial.print(" dAngle: ");
+      Serial.print(dAngleFloat);
+      Serial.println(" ");
+
+      #endif
+      Serial.flush();
+    }
 }
 
 void setOperatingMode(String val)
@@ -432,7 +448,7 @@ void setPIDstiffness(String val)
 /* PID CONTROL FUNCTIONS ******************************************************/
 void updateDefaultDesiredForce()
 {
-    if (mode == PINCHING_MODE || mode == DISABLED_MODE) 
+    if (op_mode == PINCHING_MODE || op_mode == DISABLED_MODE) 
     {
         if (filtForceNew < 1.8) {
             defaultDesiredForce = 2.0f;
@@ -441,7 +457,8 @@ void updateDefaultDesiredForce()
         }
     }
     /*
-    if (mode == TOUCHING_MODE)
+    //TOUCHING_MODE does not use force, position only
+    if (op_mode == TOUCHING_MODE)
     {
         defaultDesiredForce = -0.5f;
     }
@@ -458,12 +475,12 @@ void mainPIDloop()
         //
     // If there is an object - generate a resistive spring force, according to the penetration distance.
     // Current angle is setAngle. 
-    // Current object surface is at object_angle.
+    // Current object surface is at objectAngle.
 
-        if (setAngle >= object_angle) {
+        if (setAngle >= objectAngle) {
             desiredForce = defaultDesiredForce;
         } else {
-            float penetration = object_angle - setAngle;
+            float penetration = objectAngle - setAngle;
             desiredForce = penetration * stiffness;
         }
 
@@ -471,7 +488,7 @@ void mainPIDloop()
         currentForce = currentForce + deltaForce;
 
         errorForce = desiredForce - currentForce;
-        dAngleFloat = Kp * errorForce - Kd * dErrorForce; // angle change amount based on force PD loop.
+        dAngleFloat = PID_KP * errorForce - PID_KD * dErrorForce; // angle change amount based on force PD loop.
                                                           // Kd term is negative since desired dF/dt is always zero.
         
         /* if the measured force is very close to the desired value, assume we're at the right angle*/
@@ -489,27 +506,27 @@ void mainPIDloop()
         /*If stiffness command was bigger than '1000' - then it is a rigid object.*/
         if (stiffness >= (10 / PID_STIFFNESS_COEFFICIENT)) 
         {
-            if (setAngle < object_angle) {
-                setAngle = object_angle;  //minimum_angle;
+            if (setAngle < objectAngle) {
+                setAngle = objectAngle;  //minimum_angle;
             }
         }
         
-        if (mode == PINCHING_MODE) {
-            if (dAngle > speedLimitPinch && previousAngle < object_angle) {
+        if (op_mode == PINCHING_MODE) {
+            if (dAngle > speedLimitPinch && previousAngle < objectAngle) {
                 setAngle = previousAngle + speedLimitPinch;
                 
-                if (setAngle > object_angle) {
-                    setAngle = object_angle;
+                if (setAngle > objectAngle) {
+                    setAngle = objectAngle;
                 }    
             }
         }
 
-        if (mode == TOUCHING_MODE) {
-            setAngle = object_angle;  // Touching mode is position controlled only!
+        if (op_mode == TOUCHING_MODE) {
+            setAngle = objectAngle;  // Touching mode is position controlled only!
         }
 
         /* update servo position */
-        updateServo();
+        //updateServo();
 
         /* reset time counter */
         pid_timeSinceLastUpdate = 0.0f;
