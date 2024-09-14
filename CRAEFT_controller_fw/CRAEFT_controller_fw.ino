@@ -254,6 +254,11 @@ void updateForceReading()
         {
             rawForce = scale.get_units();     // read load cell 
             filtForceNew = 0.75 * filtForceLast + 0.25 * rawForce; // blend the raw reading with previous ones
+            /* we don't need to deal with negative forces */
+            if(filtForceNew < 0.01)
+            {
+                filtForceNew = 0.0f;
+            }
             currentForce = filtForceNew;
             dErrorForce = (filtForceNew - filtForceLast) / LOADCELL_TIME_BETWEEN_SAMPLES;  // dF/dt
             filtForceLast = filtForceNew;
@@ -285,6 +290,7 @@ void processSerialCommands()
      - Pxxx : set haptic pattern amplitude [ HAPTIC_AMPLITUDE_MIN to HAPTIC_AMPLITUDE_MAX]
      - Fxxx : set haptic pattern frequency [ HAPTIC_FREQUENCY_MIN to HAPTIC_FREQUENCY_MAX]
      - Mxxx : set controller mode  (expects a letter :  P, T, D)
+     - Zxxx: Tare the loadcell 
     */
     while (Serial.available())
     {
@@ -333,6 +339,13 @@ void processSerialCommands()
                     Serial.println("Recieved command M");
                 #endif
                 break;
+            case 'Z':
+                /* tare the loadcell */
+                scale.tare();
+                #if DEBUG
+                    Serial.println("Recieved command Z");
+                #endif
+                break;                
             default:
                 break;
         }
