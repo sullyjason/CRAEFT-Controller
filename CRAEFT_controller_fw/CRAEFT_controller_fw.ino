@@ -62,6 +62,9 @@ PWMServo servo;
 #define SERVO_ANGLE_MAX         165
 #define INIT_SERVO_ANGLE        140
 
+#define USER_ANGLE_MIN          0
+#define USER_ANGLE_MAX          SERVO_ANGLE_MAX-SERVO_ANGLE_MIN
+
 int dAngle = 0;            // Angle change command based on Force PD loop.
 float dAngleFloat = 0.0f;  // Angle change command based on Force PD loop.
 int setAngle = INIT_SERVO_ANGLE;         // Current angle & desired angle. we assume PID loop inside servo is perfect (open-loop).
@@ -205,12 +208,17 @@ void thumb_controls_setup()
 /* Servo */
 void updateServo()
 {
-    if (setAngle > SERVO_ANGLE_MAX) {
-        setAngle = SERVO_ANGLE_MAX;
-    } else if (setAngle < SERVO_ANGLE_MIN) {
-        setAngle = SERVO_ANGLE_MIN;
+    /*set Angle is the user angle, it's 0 when the claw is fully closed and 
+    (SERV0_MAX_ANGLE - SERVO_MIN_ANGLE when fully open). We translate it to 
+    angles that match the servo */
+    int servoAngle = SERVO_ANGLE_MAX - setAngle ;
+
+    if (servoAngle > SERVO_ANGLE_MAX) {
+        servoAngle = SERVO_ANGLE_MAX;
+    } else if (servoAngle < SERVO_ANGLE_MIN) {
+        servoAngle = SERVO_ANGLE_MIN;
     }
-    servo.write(setAngle);
+    servo.write(servoAngle);
 }
 
 /* Vibration coil */
@@ -428,10 +436,10 @@ double getAngle(String val)
     double angle = val.toFloat();  // Convert the string value to a float
 
     // Ensure the angle is within the valid range
-    if (angle > SERVO_ANGLE_MAX) {
-        angle = SERVO_ANGLE_MAX;
-    } else if (angle < SERVO_ANGLE_MIN) {
-        angle = SERVO_ANGLE_MIN;
+    if (angle > USER_ANGLE_MAX) {
+        angle = USER_ANGLE_MAX;
+    } else if (angle < USER_ANGLE_MIN) {
+        angle = USER_ANGLE_MIN;
     }
 
   return angle;
