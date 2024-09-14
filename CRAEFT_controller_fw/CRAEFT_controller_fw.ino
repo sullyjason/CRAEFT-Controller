@@ -36,7 +36,7 @@ operating_mode_t op_mode = DISABLED_MODE;
 
 /* Serial print Send State loop timing*/
 
-#define SENDSTATE_TIME_BETWEEN_UPDATES 1.0f
+#define SENDSTATE_TIME_BETWEEN_UPDATES 0.01f // Send updates over serial at 100 Hz
 float sendstate_timeSinceLastUpdate = 0.0f;
 
 
@@ -80,9 +80,12 @@ float loadcell_timeSinceLastUpdate = 0.0f;
 int loadcell_calibration_scale = BASE_LOADCELL_CALIBRATION;
 
 /* Thumb control parameters */
+#define LIGHT_SENSOR_COVERED_THRESHOLD 200
+
 int thumbstick_position[2] = {0};  // thumbstick x and y
 int pushbutton_press = 0;          // pushbutton state
 int light_sensor_value = 0;        // value of light sensor
+bool enable_thumb_mode_switch = false; // use the thumb position (aka value of light sensor to switch between Touching and Pinching mode)
 
 /* PID control loop */
 #define PID_TIME_BETWEEN_UPDATES    0.003f // run PID control loop at 333Hz
@@ -282,6 +285,19 @@ void updateThumbControls()
     thumbstick_position[1] = analogRead(THUMBSTICK_Y);
     pushbutton_press = digitalRead(PUSHBUTTON);
     light_sensor_value = analogRead(LIGHT_SENSOR);
+
+    /* if mode switching from thumb position is enabled, change it here, otherwise ignore it */
+    if (enable_thumb_mode_switch)
+    {
+        if (light_sensor_value <= LIGHT_SENSOR_COVERED_THRESHOLD)
+        {
+            /* light sensor is covered, we should go into pinching mode */
+            op_mode = PINCHING_MODE;
+        } else {
+            /* light sensor is not covered, we should go into touching mode */
+            op_mode = TOUCHING_MODE;
+        }
+    }
 }
 
 
@@ -298,6 +314,7 @@ void processSerialCommands()
      - Pxxx : set haptic pattern amplitude [ HAPTIC_AMPLITUDE_MIN to HAPTIC_AMPLITUDE_MAX]
      - Fxxx : set haptic pattern frequency [ HAPTIC_FREQUENCY_MIN to HAPTIC_FREQUENCY_MAX]
      - Mxxx : set controller mode  (expects a letter :  P, T, D)
+     - Lx: enable mode swtching from thumb position (expects 0 or 1)
      - Zxxx: Tare the loadcell 
     */
     while (Serial.available())
@@ -347,6 +364,12 @@ void processSerialCommands()
                     Serial.println("Recieved command M");
                 #endif
                 break;
+            case  'L':
+                enableModeSwitchingFromThumbPosition(val);
+                #if DEBUG
+                    Serial.println("Recieved command L");
+                #endif
+                break;
             case 'Z':
                 /* tare the loadcell */
                 scale.tare();
@@ -363,40 +386,57 @@ void processSerialCommands()
 void sendCurrentState()
 {
     sendstate_timeSinceLastUpdate += deltat / 1000000.0f  ;
+
     if(sendstate_timeSinceLastUpdate >= SENDSTATE_TIME_BETWEEN_UPDATES)
     {
-      sendstate_timeSinceLastUpdate = 0.0f;
-      Serial.print("Set Angle: ");
-      Serial.print(setAngle);
-      Serial.print(" Light Sensor: ");
-      Serial.print(light_sensor_value, DEC);
-      Serial.print(" Force: ");
-      Serial.print(filtForceNew, 2);
-      Serial.print(" Stiffness: ");
-      Serial.print(stiffness * (100.0f * PID_STIFFNESS_COEFFICIENT), 2);
-      Serial.print(" Thumbstick Y and X: ");
-      Serial.print(thumbstick_position[1], DEC); //vertical
-      Serial.print(" ");
-      Serial.println(thumbstick_position[0], DEC); //horizontal
+        sendstate_timeSinceLastUpdate = 0.0f;
 
-      #if DEBUG
-      Serial.print("Mode: ");
-      Serial.print(op_mode);
-      Serial.print(" Raw Force: ");
-      Serial.print(rawForce);
-      Serial.print(" ErrorForce: ");
-      Serial.print(errorForce);
-      Serial.print(" Desired Force: ");
-      Serial.print(desiredForce);
-      Serial.print(" dAngle: ");
-      Serial.print(dAngleFloat);
-      Serial.print("haptic_timeBetweenUpdates: ");
-      Serial.print(haptic_timeBetweenUpdates);
-      Serial.println(" ");
-
-      #endif
+        #if DEBUG 
+        /* include definition */
       
-     Serial.flush();
+        Serial.print("Set Angle: ");
+        Serial.print(setAngle);
+        Serial.print(" Light Sensor: ");
+        Serial.print(light_sensor_value, DEC);
+        Serial.print(" Force: ");
+        Serial.print(filtForceNew, 2);
+        Serial.print(" Stiffness: ");
+        Serial.print(stiffness * (100.0f * PID_STIFFNESS_COEFFICIENT), 2);
+        Serial.print(" Thumbstick Y and X: ");
+        Serial.print(thumbstick_position[1], DEC); //vertical
+        Serial.print(" ");
+        Serial.println(thumbstick_position[0], DEC); //horizontal
+
+        Serial.print("Mode: ");
+        Serial.print(op_mode);
+        Serial.print(" Raw Force: ");
+        Serial.print(rawForce);
+        Serial.print(" ErrorForce: ");
+        Serial.print(errorForce);
+        Serial.print(" Desired Force: ");
+        Serial.print(desiredForce);
+        Serial.print(" dAngle: ");
+        Serial.print(dAngleFloat);
+        Serial.print("haptic_timeBetweenUpdates: ");
+        Serial.print(haptic_timeBetweenUpdates);
+        Serial.println(" ");
+        # else 
+        /* Only send necessary values */
+        Serial.print(setAngle);
+        Serial.print(" ");
+        Serial.print(light_sensor_value, DEC);
+        Serial.print(" ");
+        Serial.print(filtForceNew, 2);
+        Serial.print(" ");
+        Serial.print(stiffness * (100.0f * PID_STIFFNESS_COEFFICIENT), 2);
+        Serial.print(" ");
+        Serial.print(thumbstick_position[1], DEC); //vertical
+        Serial.print(" ");
+        Serial.println(thumbstick_position[0], DEC); //horizontal
+        
+        #endif
+      
+        Serial.flush();
     }
 }
 
@@ -429,6 +469,17 @@ void setOperatingMode(String val)
         #endif 
         break;
   }
+}
+
+void enableModeSwitchingFromThumbPosition(String val)
+{
+    int value = val.toInt(); //  0 or 1 
+    if (value)
+    {
+        enable_thumb_mode_switch = true;
+    } else {
+        enable_thumb_mode_switch = false;
+    }
 }
 
 double getAngle(String val)
