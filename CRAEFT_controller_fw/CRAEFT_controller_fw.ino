@@ -67,9 +67,9 @@ PWMServo servo;
 
 int dAngle = 0;            // Angle change command based on Force PD loop.
 float dAngleFloat = 0.0f;  // Angle change command based on Force PD loop.
-int setAngle = INIT_SERVO_ANGLE;         // Current angle & desired angle. we assume PID loop inside servo is perfect (open-loop).
-int previousAngle = INIT_SERVO_ANGLE;
-int objectAngle = SERVO_ANGLE_MIN; // Servo angle at which the object collides with the finger
+int setAngle = 30;         // Current angle & desired angle. we assume PID loop inside servo is perfect (open-loop).
+int previousAngle = 30;
+int objectAngle = 30; // Servo angle at which the object collides with the finger
 
 /* Load cell parameters */
 HX711 scale;
@@ -86,8 +86,8 @@ int light_sensor_value = 0;        // value of light sensor
 
 /* PID control loop */
 #define PID_TIME_BETWEEN_UPDATES    0.003f // run PID control loop at 333Hz
-#define PID_KP                      2.0f
-#define PID_KD                      0.03f
+#define PID_KP                      0.620f
+#define PID_KD                      0.045f
 
 #define PID_STIFFNESS_MIN           0.01f
 #define PID_STIFFNESS_DEFAULT       1.0f
@@ -490,8 +490,8 @@ void updateDefaultDesiredForce()
 {
     if (op_mode == PINCHING_MODE || op_mode == DISABLED_MODE) 
     {
-        if (filtForceNew < 1.8) {
-            defaultDesiredForce = 2.0f;
+        if (filtForceNew < 1.3) {
+            defaultDesiredForce = 1.5f;
         } else {
              defaultDesiredForce = 0.4f;
         }
@@ -539,8 +539,11 @@ void mainPIDloop()
         /* Update target Angle : basic update*/
         previousAngle = setAngle;
         dAngle = dAngleFloat;
+
+      
         setAngle = setAngle + dAngle;
 
+        if (setAngle < USER_ANGLE_MAX){
         /* Now we decide how to further update it based on the object and mode */
 
         /*If stiffness command was bigger than '1000' - then it is a rigid object.*/
@@ -564,6 +567,12 @@ void mainPIDloop()
         if (op_mode == TOUCHING_MODE) {
             setAngle = objectAngle;  // Touching mode is position controlled only!
         }
+        }
+        else
+        {
+          setAngle=USER_ANGLE_MAX;
+        }
+
 
         /* update servo position */
         updateServo();
