@@ -18,7 +18,7 @@
 
 /* GLOBAL VARIABLES ***********************************************************/
 
-#define DEBUG 1
+#define DEBUG 0
 
 /* Main timing variables */
 uint32_t now = 0;
@@ -27,7 +27,7 @@ uint32_t lastLoopTime =0 ;
 
 /* Operating modes */
 typedef enum {
-    DISABLED_MODE =0,
+    DISABLED_MODE = 0,
     PINCHING_MODE,
     TOUCHING_MODE,
 } operating_mode_t;
@@ -80,7 +80,7 @@ float loadcell_timeSinceLastUpdate = 0.0f;
 int loadcell_calibration_scale = BASE_LOADCELL_CALIBRATION;
 
 /* Thumb control parameters */
-#define LIGHT_SENSOR_COVERED_THRESHOLD 200
+#define LIGHT_SENSOR_COVERED_THRESHOLD 600
 
 int thumbstick_position[2] = {0};  // thumbstick x and y
 int pushbutton_press = 0;          // pushbutton state
