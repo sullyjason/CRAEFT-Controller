@@ -422,6 +422,10 @@ void sendCurrentState()
         Serial.println(" ");
         # else 
         /* Only send necessary values */
+        Serial.print(mode);
+        Serial.print(" ");
+        Serial.print(objectAngle);
+        Serial.print(" ");
         Serial.print(setAngle);
         Serial.print(" ");
         Serial.print(light_sensor_value, DEC);

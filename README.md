@@ -19,8 +19,12 @@ Haptic controller project page
     * Send commands to the controller 
     * Receive information from the controller at 100Hz: the format is
 ```
-    <PID set Angle> <light_sensor_value> <force> <stiffness> <thumbstick Y> <thumbstick X>
+    <mode><target object angle><PID set Angle> <light_sensor_value> <current force> <stiffness> <thumbstick Y> <thumbstick X>
 ```
+* Mode:
+    * Mode 0 : DISABLED MODE
+    * Mode 1 : PINCHING MODE - force control
+    * Mode 2 : TOUCHING MODE - position
 
 **List of commands**
 
