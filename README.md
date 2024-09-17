@@ -30,11 +30,11 @@ Haptic controller project page
 
 |Command| Acceptable values|Definition|Example|
 |:---:|:---:|:---:|:---:|
+| M | T, P, D | change `op_mode` | MT : puts the controller in TOUCHING MODE |
 | A |0 to 50 |update  `setAngle` |A20 : puts set angle at 20 degrees|
 | O |0 to 50 |update  `objectAngle` |O25 : puts object angle at 30 degrees|
 | Z | - | tare the loadcell| let the Index finger go and send "Z" to reset measured force to 0|
-| etc | etc | etc | etc |
-
+| L | 0 or 1 | allows controller to switch to pinching mode if the light sensor is covered | L1 : activates this function |
 
 **Angle definition** 
 
@@ -44,10 +44,10 @@ Haptic controller project page
 <Insert diagram that shows what is where and how it is controlled - simple version>
 
 ## Documentation todo
-- [ ] Upload zip file with all the STL files used in STL files folder
+- [x] Upload zip file with all the STL files used in STL files folder
 - [ ] Correct PCB design so that someone can order a new PCB that doensn't need twaeking
-- [ ] Upload zip file of Kicad PCB project in the PCB folder
-- [ ] Upload schematic PDF in PCB folder
+- [x] Upload zip file of Kicad PCB project in the PCB folder
+- [x] Upload schematic PDF in PCB folder
 - [ ] Upload Bill of Materials .csv file in the main repository, with all the components used and links when makes sense
 - [ ] Add images to this readme, you can upload them in the folder <Images> and link to them
 - [ ] Write a better how to use section, complete it. 
@@ -55,9 +55,9 @@ Haptic controller project page
 - [ ] Complete format of the information the controller sends back 
 - [ ] Add angle definition image 
 - [ ] Add block diagram to explain the controller components
-- [ ] Finish assembling and labelling both controllers
-- [ ] Test code on both controllers
-- [ ] Test added feature: enable/disable mode switching based on thumb placement. Default is off. Make sure to set a threshold that works with both controllers. 
+- [x] Finish assembling and labelling both controllers
+- [x] Test code on both controllers
+- [x] Test added feature: enable/disable mode switching based on thumb placement. Default is off. Make sure to set a threshold that works with both controllers. 
 - [ ] Reassemble Quest controller
-- [ ] Check with Christian if we send both controllers or only one
-- [ ] Prepare box to ship Controller(s) + Quest controller
+- [x] Check with Christian if we send both controllers or only one
+- [x] Prepare box to ship Controller(s) + Quest controller

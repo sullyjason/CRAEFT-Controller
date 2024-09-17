@@ -18,7 +18,7 @@
 
 /* GLOBAL VARIABLES ***********************************************************/
 
-#define DEBUG 0
+#define DEBUG 1
 
 /* Main timing variables */
 uint32_t now = 0;
@@ -422,7 +422,7 @@ void sendCurrentState()
         Serial.println(" ");
         # else 
         /* Only send necessary values */
-        Serial.print(mode);
+        Serial.print(op_mode);
         Serial.print(" ");
         Serial.print(objectAngle);
         Serial.print(" ");
