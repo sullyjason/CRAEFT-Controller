@@ -9,7 +9,9 @@ Haptic controller project page
 
 ## Description
 
-<img src="./Images/craeft_controller_diagram.png" alt="diagram of the craeft controller" width="90%"/>
+<img src="./Images/Instructional/craeft_controller_diagram.png" alt="diagram of the craeft controller" width="90%"/>
+
+
 
 
 ## How to use 
@@ -19,18 +21,18 @@ Haptic controller project page
 
 
 
-<img src="./Images/Instructional/step1.png" alt= "Inserting the quest controller" width="35%"/> 
-<img src="./Images/Instructional/step2.png" alt= "plugging in the USB cables" width="47%"/>
+<img src="./Images/Instructional/step1.png" alt= "Inserting the quest controller" width="40%"/> 
+<img src="./Images/Instructional/step2.png" alt= "plugging in the USB cables" width="53%"/>
 
 * Open Arduino IDE, Serial port at any baudrate, line termination etc.
 
 
-* Use the serial port to: 
+* Use the serial monitor to: 
     * Send commands to the controller 
     * Receive information from the controller at 100Hz: the format is
 
 ```
-    <mode><target object angle><PID set Angle> <light_sensor_value> <current force> <stiffness> <thumbstick Y> <thumbstick X>
+    <mode> <target object angle> <PID set Angle> <light_sensor_value> <current force> <stiffness> <thumbstick Y> <thumbstick X>
 ```
 * Mode:
     * Mode 0 : DISABLED MODE
@@ -43,19 +45,20 @@ The following commands can be sent to the controller to change its opearting mod
 
 |Command| Acceptable values|Definition|Example|
 |:---:|:---:|:---:|:---:|
-| M | T, P, D | change `op_mode` | MT : puts the controller in TOUCHING MODE |
-| A |0 to 50 |update  `setAngle` |A20 : puts set angle at 20 degrees|
-| O |0 to 50 |update  `objectAngle` |O25 : puts object angle at 30 degrees|
-|F |0 to 15000|haptic vibration frequency | F800 : sets the haptic vibration to 800Hz|
-|P|0 to 150|haptic vibration amplitude | sets the strength of the haptic vibration| P200 : sets the haptic vibration amplitude to 200|
+| M | T, P, D | change the operating mode `op_mode` | MT : puts the controller in TOUCHING MODE |
+| A |0 to 50 |update the desired angle of the servo arm `setAngle` |A20 : puts set angle at 20 degrees|
+| O |0 to 50 |update the angle at which finger collides with object `objectAngle` |O25 : puts object angle at 30 degrees|
+|F |0 to 15000|update haptic vibration frequency `haptic_updateFrequency`| F800 : sets the haptic vibration to 800Hz|
+|P|0 to 150|update the haptic vibration amplitude (strength) `haptic_amp`  | P100 : sets the haptic vibration amplitude to 100|
 | L | 0 or 1 | allows controller to switch to pinching mode if the light sensor is covered | L1 : activates this function |
+
 
 **Servo arm range** 
 
 Illustration of what is meant by the previously mentioned angles. The maximum angle, 50 by default, can be configured if needed by changing the global variable `SERVO_ANGLE_MAX`
 (such as for users with smaller hands).
 
-<img src="./Images/Instructional/AngleDefinition.png" width="40%" />
+<img src="./Images/Instructional/AngleDefinition.png" width="60%" />
 
 ## System block diagram
 <img src="./Images/Instructional/blockdiagrampng.png" width="80%" />
@@ -71,7 +74,7 @@ Illustration of what is meant by the previously mentioned angles. The maximum an
 - [x] Complete the list of commands in the table
 - [x] Complete format of the information the controller sends back 
 - [x] Add angle definition image 
-- [ ] Add block diagram to explain the controller components
+- [x] Add block diagram to explain the controller components
 - [x] Finish assembling and labelling both controllers
 - [x] Test code on both controllers
 - [x] Test added feature: enable/disable mode switching based on thumb placement. Default is off. Make sure to set a threshold that works with both controllers. 
