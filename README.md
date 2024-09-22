@@ -9,7 +9,7 @@ Haptic controller project page
 
 ## Description
 
-<img src="./Images/craeft_controller_diagram.png" alt="diagram of the craeft controller" width="890"/>
+<img src="./Images/craeft_controller_diagram.png" alt="diagram of the craeft controller" width="90%"/>
 
 
 ## How to use 
@@ -19,8 +19,8 @@ Haptic controller project page
 
 
 
-<img src="./Images/Instructional/step1.png" alt= "Inserting the quest controller" height="400"/> 
-<img src="./Images/Instructional/step2.png" alt= "plugging in the USB cables" height="400"/>
+<img src="./Images/Instructional/step1.png" alt= "Inserting the quest controller" width="35%"/> 
+<img src="./Images/Instructional/step2.png" alt= "plugging in the USB cables" width="47%"/>
 
 * Open Arduino IDE, Serial port at any baudrate, line termination etc.
 
@@ -55,10 +55,10 @@ The following commands can be sent to the controller to change its opearting mod
 Illustration of what is meant by the previously mentioned angles. The maximum angle, 50 by default, can be configured if needed by changing the global variable `SERVO_ANGLE_MAX`
 (such as for users with smaller hands).
 
-<img src="./Images/Instructional/AngleDefinition.png" height="400" />
+<img src="./Images/Instructional/AngleDefinition.png" width="40%" />
 
 ## System block diagram
-<img src="./Images/Instructional/blockdiagrampng.png" width="850" />
+<img src="./Images/Instructional/blockdiagrampng.png" width="80%" />
 
 ## Documentation todo
 - [x] Upload zip file with all the STL files used in STL files folder
