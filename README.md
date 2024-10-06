@@ -21,8 +21,8 @@ Haptic controller project page
 
 
 
-<img src="./Images/Instructional/step1.png" alt= "Inserting the quest controller" width="35%"/> 
-<img src="./Images/Instructional/step2.png" alt= "plugging in the USB cables" width="47%"/>
+<img src="./Images/Instructional/step1.png" alt= "Inserting the quest controller" width="33%"/> 
+<img src="./Images/Instructional/step2.png" alt= "plugging in the USB cables" width="44%"/>
 
 * Open Arduino IDE, Serial port at any baudrate, line termination etc.
 
