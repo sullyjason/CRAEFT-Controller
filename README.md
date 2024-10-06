@@ -20,9 +20,9 @@ Haptic controller project page
 * Optionally, if using a Meta Quest 3, insert the right hand Quest controller into the controller adapter. 
 
 
-
-<img src="./Images/Instructional/step1.png" alt= "Inserting the quest controller" width="33%"> 
-<img src="./Images/Instructional/step2.png" alt= "plugging in the USB cables" width="44%"/>
+<p float="left">
+<img src="./Images/Instructional/step1.png" alt= "Inserting the quest controller" width="36%"> <img src="./Images/Instructional/step2.png" alt= "plugging in the USB cables" width="48%"/>
+</p>
 
 * Open Arduino IDE, Serial port at any baudrate, line termination etc.
 
