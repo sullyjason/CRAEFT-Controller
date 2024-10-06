@@ -62,21 +62,3 @@ Illustration of what is meant by the previously mentioned angles. The maximum an
 
 ## System block diagram
 <img src="./Images/Instructional/blockdiagrampng.png" width="80%" />
-
-## Documentation todo
-- [x] Upload zip file with all the STL files used in STL files folder
-- [x] Correct PCB design so that someone can order a new PCB that doensn't need twaeking
-- [x] Upload zip file of Kicad PCB project in the PCB folder
-- [x] Upload schematic PDF in PCB folder
-- [x] Upload Bill of Materials .csv file in the main repository, with all the components used and links when makes sense
-- [x] Add images to this readme, you can upload them in the folder <Images> and link to them
-- [x] Write a better how to use section, complete it. 
-- [x] Complete the list of commands in the table
-- [x] Complete format of the information the controller sends back 
-- [x] Add angle definition image 
-- [x] Add block diagram to explain the controller components
-- [x] Finish assembling and labelling both controllers
-- [x] Test code on both controllers
-- [x] Test added feature: enable/disable mode switching based on thumb placement. Default is off. Make sure to set a threshold that works with both controllers. 
-- [x] Check with Christian if we send both controllers or only one
-- [x] Prepare box to ship Controller(s) + Quest controller
